@@ -1,0 +1,19 @@
+// C++ file configures plugin settings.
+//
+// That file will be loaded by Cling C++ interpreter.
+
+namespace flex_pimpl_plugin {
+
+// Declaration must match plugin version.
+struct Settings {
+  // output directory for generated files
+  std::string outDir;
+};
+
+void loadSettings(Settings& settings)
+{
+  settings.outDir
+    = "${flextool_outdir}";
+}
+
+} // namespace flex_pimpl_plugin
