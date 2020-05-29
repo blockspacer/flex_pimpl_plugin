@@ -100,6 +100,9 @@ add_custom_command(
         --extra-arg=-I${clang_includes}
         --extra-arg=-I${corrade_includes}
         --extra-arg=-I${entt_includes}
+        # custom define for basis
+        --extra-arg=-DDISABLE_DOCTEST=1
+        --extra-arg=-DDOCTEST_CONFIG_DISABLE=1
         # NOTE: Cling does not support compile_commands.json
         # so we must add headers used by `flex_support_headers` package
         # place into `flex_support_headers` includes that can be used by Cling

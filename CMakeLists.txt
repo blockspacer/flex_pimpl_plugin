@@ -463,6 +463,9 @@ add_custom_command(
         --extra-arg=-I${corrade_includes}
         --extra-arg=-I${entt_includes}
         --extra-arg=-DCLING_IS_ON=1
+        # custom define for basis
+        --extra-arg=-DDISABLE_DOCTEST=1
+        --extra-arg=-DDOCTEST_CONFIG_DISABLE=1
         --extra-arg=-I${CMAKE_CURRENT_SOURCE_DIR}/include
         --extra-arg=-I${chromium_base_headers}
         --extra-arg=-I${chromium_build_util_headers}
@@ -593,7 +596,8 @@ set_target_properties(${LIB_NAME}
 )
 
 # POSITION_INDEPENDENT_CODE for -fPIC
-set_property(TARGET ${LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_property(TARGET ${LIB_NAME}
+  PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 if(ENABLE_CLING)
   find_package(Cling REQUIRED)

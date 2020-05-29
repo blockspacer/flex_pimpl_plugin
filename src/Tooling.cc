@@ -56,6 +56,7 @@ namespace plugin {
 
 static const char kSkipPimplAttr[] = "skip_pimpl";
 
+/// \todo refactor similar to https://github.com/jarro2783/cxxopts
 /**
   * EXAMPLE INPUT:
       template<typename impl = ::FooImpl>
@@ -140,7 +141,7 @@ static ReflectForPimplSettings getReflectForPimplSettings(
           template_type->getDefaultArgument();
 
         result.implParameterQualType
-          = exatractTypeName(
+          = clang_utils::extractTypeName(
               result.implArgQualType.getAsString(printingPolicy)
             );
         CHECK(!result.implParameterQualType.empty())
@@ -150,7 +151,7 @@ static ReflectForPimplSettings getReflectForPimplSettings(
           template_type->getDefaultArgument();
 
         result.interfaceParameterQualType
-          = exatractTypeName(
+          = clang_utils::extractTypeName(
               result.interfaceArgQualType.getAsString(printingPolicy)
             );
         CHECK(!result.interfaceParameterQualType.empty())
@@ -366,172 +367,7 @@ reflection::ClassInfoPtr
   return reflectedClass;
 }
 
-// This function adapted from clang/lib/ARCMigrate/Transforms.cpp
-static clang::SourceLocation findSemiAfterLocation(
-  const clang::SourceLocation& loc
-  , clang::Rewriter& rewriter)
-{
-  clang::SourceLocation result;
-
-  clang::SourceManager &SM = rewriter.getSourceMgr();
-
-  if (loc.isMacroID()) {
-    if (!clang::Lexer::isAtEndOfMacroExpansion(
-          loc, SM, rewriter.getLangOpts(),
-          // If non-null and function returns true, it is set to
-          // end location of the macro.
-          &result))
-      return clang::SourceLocation();
-  }
-
-  result
-    = clang::Lexer::getLocForEndOfToken(
-       loc, /*Offset=*/0, SM, rewriter.getLangOpts());
-
-  // Break down the source location.
-  std::pair<clang::FileID, unsigned> locInfo
-    = SM.getDecomposedLoc(result);
-
-  // Try to load the file buffer.
-  bool invalidTemp = false;
-  StringRef file
-    = SM.getBufferData(locInfo.first, &invalidTemp);
-  if (invalidTemp) {
-    return clang::SourceLocation();
-  }
-
-  const char* tokenBegin
-    = file.data() + locInfo.second;
-
-  // Lex from the start of the given location.
-  clang::Lexer lexer(
-    SM.getLocForStartOfFile(locInfo.first),
-    rewriter.getLangOpts(),
-    file.begin(),
-    tokenBegin,
-    file.end());
-
-  clang::Token tok;
-  lexer.LexFromRawLexer(tok);
-  if (tok.isNot(clang::tok::semi)) {
-    return clang::SourceLocation();
-  }
-
-  return tok.getLocation().isInvalid()
-    ? result
-    : tok.getLocation();
-}
-
-// replaces clang matchResult with |replacement| in source code
-static void replaceWith(
-  const clang_utils::SourceTransformOptions& sourceTransformOptions
-  , const ReflectForPimplSettings& reflectForPimplSettings
-  , const std::string& replacement = ""
-  , const bool skip_rewrite_not_main_file = false)
-{
-  DVLOG(9)
-    << "applying source code transformation for: "
-    << reflectForPimplSettings.implParameterQualType;
-
-  clang::SourceManager &SM
-    = sourceTransformOptions.rewriter.getSourceMgr();
-
-  clang::PrintingPolicy printingPolicy(
-    sourceTransformOptions.rewriter.getLangOpts());
-
-  const clang::LangOptions& langOptions
-    = sourceTransformOptions.rewriter.getLangOpts();
-
-  const clang::CXXRecordDecl *node =
-    sourceTransformOptions.matchResult.Nodes.getNodeAs<
-      clang::CXXRecordDecl>("bind_gen");
-
-  clang::SourceLocation startLoc
-    = sourceTransformOptions.decl->getLocStart();
-  // Note Stmt::getLocEnd() returns the source location prior to the
-  // token at the end of the line.  For instance, for:
-  // var = 123;
-  //      ^---- getLocEnd() points here.
-  clang::SourceLocation endLoc
-    = sourceTransformOptions.decl->getLocEnd();
-
-  // When there is a #include <vector> in the source file,
-  // our find-decl will print out all the declarations
-  // in that included file, because these included files are parsed
-  // and consumed as a whole with our source file.
-  // To fix this, we need to check if the declarations
-  // are defined in our source file
-  if(skip_rewrite_not_main_file) {
-    const clang::FileID& mainFileID = SM.getMainFileID();
-    const auto& FileID
-      = SM.getFileID(sourceTransformOptions.decl->getLocation());
-    if (FileID != mainFileID) {
-      DVLOG(10)
-        << "skipped rewriting of decl in included file: "
-        << sourceTransformOptions.decl
-             ->getLocation().printToString(SM).substr(0, 1000);
-      return;
-    }
-  }
-
-  clang_utils::expandLocations(
-    startLoc, endLoc, sourceTransformOptions.rewriter);
-
-  // EXAMPLE:
-  // template<typename impl = FooImpl>
-  //   class my_annotation_attr()
-  //     PimplMethodCallsInjector
-  //   {}
-  // we want to get range including template
-  if(node->getDescribedClassTemplate()) {
-    clang::SourceRange varSourceRange
-      = node->getDescribedClassTemplate()->getSourceRange();
-    DCHECK(varSourceRange.isValid());
-    clang::CharSourceRange charSourceRange(
-      varSourceRange,
-      true // IsTokenRange
-    );
-    startLoc = charSourceRange.getBegin();
-    DCHECK(startLoc.isValid());
-    endLoc = charSourceRange.getEnd();
-    DCHECK(endLoc.isValid());
-  }
-
-//#define DEBUG_PRINT_SOURCE_RANGE 1
-#if defined(DEBUG_PRINT_SOURCE_RANGE)
-  if(node->getDescribedClassTemplate())
-  {
-    clang::SourceRange varSourceRange
-      = node->getDescribedClassTemplate()->getSourceRange();
-    clang::CharSourceRange charSourceRange(
-      varSourceRange,
-      true // IsTokenRange
-    );
-    clang::SourceLocation initStartLoc
-      = charSourceRange.getBegin();
-    if(varSourceRange.isValid()) {
-      StringRef sourceText
-        = clang::Lexer::getSourceText(
-            charSourceRange
-            , SM, langOptions, 0);
-      DCHECK(initStartLoc.isValid());
-      DVLOG(9) << sourceText.str();
-      DCHECK(false); // TODO
-    }
-  }
-#endif // DEBUG_PRINT_SOURCE_RANGE
-
-  {
-    // gets us past the ';'.
-    endLoc = findSemiAfterLocation(endLoc, sourceTransformOptions.rewriter);
-  }
-
-  /// \note if result.replacer is nullptr, than we will keep old code
-  sourceTransformOptions.rewriter.ReplaceText(
-    clang::SourceRange(startLoc, endLoc)
-    , replacement);
-}
-
+/// \todo ability to change generator template
 clang_utils::SourceTransformResult
   pimplTooling::injectPimplStorage(
     const clang_utils::SourceTransformOptions& sourceTransformOptions)
@@ -541,6 +377,9 @@ clang_utils::SourceTransformResult
   VLOG(9)
     << "injectPimplStorage called...";
 
+  /// \todo remove code duplication:
+  /// move SourceManager, PrintingPolicy, LangOptions
+  /// into SourceTransformOptions
   clang::SourceManager &SM
     = sourceTransformOptions.rewriter.getSourceMgr();
 
@@ -602,6 +441,8 @@ clang_utils::SourceTransformResult
         8
    **/
   {
+    /// \todo refactor similar to https://github.com/jarro2783/cxxopts
+    /// \note automatically convert argument string to desired type
     flexlib::args annotationArgs =
       sourceTransformOptions.func_with_args.parsed_func_.args_;
     for(const auto& arg : annotationArgs.as_vec_)
@@ -671,15 +512,20 @@ clang_utils::SourceTransformResult
     replacer += "> impl_;";
   }
 
+  DVLOG(9)
+    << "applying source code transformation for: "
+    << reflectForPimplSettings.implParameterQualType;
   // remove annotation from source file
-  replaceWith(
-    sourceTransformOptions
-    , reflectForPimplSettings
+  clang_utils::replaceWith(
+    sourceTransformOptions.rewriter
+    , sourceTransformOptions.decl
+    , sourceTransformOptions.matchResult
     , replacer);
 
   return clang_utils::SourceTransformResult{nullptr};
 }
 
+/// \todo ability to change generator template
 clang_utils::SourceTransformResult
   pimplTooling::injectPimplMethodCalls(
     const clang_utils::SourceTransformOptions& sourceTransformOptions)
@@ -747,6 +593,7 @@ clang_utils::SourceTransformResult
         without_method_body
    **/
   {
+    /// \todo refactor similar to https://github.com/jarro2783/cxxopts
     flexlib::args annotationArgs =
       sourceTransformOptions.func_with_args.parsed_func_.args_;
     for(const auto& arg : annotationArgs.as_vec_)
@@ -789,16 +636,16 @@ clang_utils::SourceTransformResult
         continue;
       }
       const std::string methodForwarding
-         = printMethodForwarding(
+         = clang_utils::printMethodForwarding(
              method
-             , kSeparatorWhitespace
+             , clang_utils::kSeparatorWhitespace
             // what method printer is allowed to print
              , MethodPrinter::Forwarding::Options::ALL
                & ~MethodPrinter::Forwarding::Options::VIRTUAL);
       const std::string methodTrailing
-         = printMethodTrailing(
+         = clang_utils::printMethodTrailing(
              method
-             , kSeparatorWhitespace
+             , clang_utils::kSeparatorWhitespace
              // what method printer is allowed to print
              , MethodPrinter::Trailing::Options::NOTHING
                | MethodPrinter::Trailing::Options::CONST
@@ -835,7 +682,9 @@ clang_utils::SourceTransformResult
           replacer += " return impl_->";
           replacer += method->name;
           replacer += "(";
-          replacer += forwardMethodParamNames(method->params);
+          replacer
+            += clang_utils::forwardMethodParamNames(
+                 method->params);
           replacer += ")";
           replacer += ";";
           replacer += "\n";
@@ -848,10 +697,14 @@ clang_utils::SourceTransformResult
     }
   }
 
+  DVLOG(9)
+    << "applying source code transformation for: "
+    << reflectForPimplSettings.implParameterQualType;
   // remove annotation from source file
-  replaceWith(
-    sourceTransformOptions
-    , reflectForPimplSettings
+  clang_utils::replaceWith(
+    sourceTransformOptions.rewriter
+    , sourceTransformOptions.decl
+    , sourceTransformOptions.matchResult
     , replacer);
 
   return clang_utils::SourceTransformResult{nullptr};
@@ -916,6 +769,7 @@ clang_utils::SourceTransformResult
     << reflectedClass->name;
 
   std::vector<reflection::MethodInfoPtr> cleaned_methods;
+  /// \todo move to separate function
   // remove methods that have special annotation
   for(reflection::MethodInfoPtr& method : reflectedClass->methods)
   {
@@ -994,11 +848,14 @@ clang_utils::SourceTransformResult
       << "populated reflection cache with key: "
       << reflectForPimplSettings.implParameterQualType;
   }
-
+  DVLOG(9)
+    << "applying source code transformation for: "
+    << reflectForPimplSettings.implParameterQualType;
   // remove annotation from source file
-  replaceWith(
-    sourceTransformOptions
-    , reflectForPimplSettings
+  clang_utils::replaceWith(
+    sourceTransformOptions.rewriter
+    , sourceTransformOptions.decl
+    , sourceTransformOptions.matchResult
     , "" // replace with empty string
   );
 
