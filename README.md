@@ -2,39 +2,25 @@
 
 Plugin for [https://github.com/blockspacer/flextool](https://github.com/blockspacer/flextool)
 
-Plugin provides support for pimpl pattern
+Plugin provides support for pimpl pattern also known as 'Pointer to Implementation'.
+
+According to this pattern C++ developer divides the class into two parts: public (interface) part and private (implementation).
+
+Both parts are C++ classes, but only interface is visible to the class users, and implementation is hidden behind pointer.
+
+Source file with public class implementation contains a lot of boilerplate code.
+
+We use flextool (libtooling) to generate code and reduce the amount of boilerplate code.
 
 Note that plugin output is valid C++ code: you can open generated files and debug them as usual.
 
-If you do not know why to use C++ pimpl-es see [https://www.youtube.com/watch?v=OtU51Ytfe04](https://www.youtube.com/watch?v=OtU51Ytfe04)
+If you do not know why to use C++ pimpl see [https://www.bfilipek.com/2018/01/pimpl.html](https://www.bfilipek.com/2018/01/pimpl.html)
 
 See for details about flextool [https://blockspacer.github.io/flex_docs/](https://blockspacer.github.io/flex_docs/)
 
-See for more details about pimpl implementation
+## How it works
 
-- http://ldionne.com/cppnow-2018-runtime-polymorphism/#/14/1
-
-See for more details about pimpl-es and `Polymorphic Ducks`:
-
-- [https://mropert.github.io/2017/11/30/polymorphic_ducks/](https://mropert.github.io/2017/11/30/polymorphic_ducks/)
-- [https://mropert.github.io/2017/12/17/better_polymorphic_ducks/](https://mropert.github.io/2017/12/17/better_polymorphic_ducks/)
-- [https://mropert.github.io/2017/12/23/undefined_ducks/](https://mropert.github.io/2017/12/23/undefined_ducks/)
-
-Runtime Concepts for the C++ Standard Template Library by Sean Parent:
-
-- [https://sean-parent.stlab.cc/papers/2008-03-sac/p171-pirkelbauer.pdf](https://sean-parent.stlab.cc/papers/2008-03-sac/p171-pirkelbauer.pdf)
-
-A Generic, Extendable and Efficient Solution for Polymorphic Programming (p0957r4):
-
-- [http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0957r4.pdf](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0957r4.pdf)
-
-Dynamic Generic Programming with Virtual Concepts by Andrea Proli:
-
-- [https://github.com/andyprowl/virtual-concepts/blob/master/draft/Dynamic%20Generic%20Programming%20with%20Virtual%20Concepts.pdf](https://github.com/andyprowl/virtual-concepts/blob/master/draft/Dynamic%20Generic%20Programming%20with%20Virtual%20Concepts.pdf)
-
-Runtime Polymorphic Generic Programming — Mixing Objects and Concepts in ConceptC++
-
-- [https://pdfs.semanticscholar.org/aa3f/fdcb687f2b5115996f4ef1f2a1ea0a01cb6a.pdf](https://pdfs.semanticscholar.org/aa3f/fdcb687f2b5115996f4ef1f2a1ea0a01cb6a.pdf)
+See [https://blockspacer.github.io/flex_docs/tutorial/](https://blockspacer.github.io/flex_docs/tutorial/)
 
 ## Usage
 
@@ -250,3 +236,9 @@ In order to revert the editable mode just remove the link using:
 conan editable remove \
   flex_pimpl_plugin/master@conan/stable
 ```
+
+## Similar projects
+
+- https://github.com/notetau/pimpl-cpp-generator
+- https://github.com/sqjk/pimpl_ptr
+- https://github.com/flexferrum/autoprogrammer/wiki/pImpl-implementation-generator
