@@ -27,8 +27,8 @@ set(GENERATED_FOLDER_FOR_IDE
 # Hack to depend NOT on CONAN_PKG::libname, but on libname directly
 # See for details
 # https://docs.conan.io/en/latest/developing_packages/workspaces.html
-set(LOCAL_BUILD FALSE CACHE BOOL "LOCAL_BUILD")
-message(STATUS "LOCAL_BUILD=${LOCAL_BUILD}")
+set(${PROJECT_NAME}_LOCAL_BUILD FALSE CACHE BOOL "${PROJECT_NAME}_LOCAL_BUILD")
+message(STATUS "${PROJECT_NAME}_LOCAL_BUILD=${${PROJECT_NAME}_LOCAL_BUILD}")
 
 set(${PROJECT_NAME}_BUILD_SHARED_LIBS
   TRUE CACHE BOOL
@@ -267,28 +267,29 @@ macro(add_relative_include_dir TARGET VISIBILITY_BUILD VISIBILITY_INSTALL NEW_EL
     ${CMAKE_CURRENT_SOURCE_DIR}/${NEW_ELEM} )
 endmacro(add_relative_include_dir)
 
-#if(NOT TARGET CONAN_PKG::flexlib)
-#  message(FATAL_ERROR "Use flexlib from conan")
-#endif()
-#set(flexlib CONAN_PKG::flexlib)
-#if(LOCAL_BUILD)
-#  set(flexlib flexlib)
-#  get_property(flexlib_file
-#    TARGET ${flexlib}
-#    PROPERTY LOCATION)
-#else()
-#  set(flexlib_file
-#    ${CONAN_FLEXLIB_ROOT}/lib/flexlib${CMAKE_STATIC_LIBRARY_SUFFIX}
-#  )
-#endif()
-#message(STATUS "flexlib_file == ${flexlib_file}")
-
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
 list(APPEND CMAKE_PROGRAM_PATH ${CONAN_BIN_DIRS})
 # TODO: make better: link lib dirs
 link_directories(${CONAN_LIB_DIRS})
+
+#
+if(NOT TARGET CONAN_PKG::basis)
+  message(FATAL_ERROR "Use basis from conan")
+endif()
+set(basis CONAN_PKG::basis)
+set(basis_location ${CONAN_BASIS_ROOT})
+set(basis_headers
+  ${basis_location}/include
+)
+if(basis_LOCAL_BUILD)
+  set(basis basis)
+  set(basis_headers
+    ${CONAN_BASIS_ROOT}
+  )
+endif(basis_LOCAL_BUILD)
+message(STATUS "basis_headers=${basis_headers}")
 #
 if(NOT TARGET CONAN_PKG::flextool)
   message(FATAL_ERROR "Use flextool from conan")
@@ -298,7 +299,7 @@ if(NOT flextool OR ${flextool} STREQUAL "")
   message(FATAL_ERROR "flextool not found ${flextool}")
 endif()
 #
-if(LOCAL_BUILD)
+if(${PROJECT_NAME}_LOCAL_BUILD)
   get_property(flex_reflect_plugin_location TARGET flex_reflect_plugin PROPERTY LIBRARY_OUTPUT_DIRECTORY)
   message (STATUS "flex_reflect_plugin_location == ${flex_reflect_plugin_location}")
   set(flex_reflect_plugin
@@ -310,7 +311,7 @@ else()
   )
 endif()
 #
-if(LOCAL_BUILD)
+if(${PROJECT_NAME}_LOCAL_BUILD)
   get_property(flex_squarets_plugin_location TARGET flex_squarets_plugin PROPERTY LIBRARY_OUTPUT_DIRECTORY)
   message (STATUS "flex_squarets_plugin_location == ${flex_squarets_plugin_location}")
   set(flex_squarets_plugin
@@ -350,10 +351,6 @@ set(flexlib_headers
   ${CONAN_FLEXLIB_ROOT}/include
 )
 message(STATUS "flexlib_headers=${flexlib_headers}")
-set(basis_headers
-  ${CONAN_BASIS_ROOT}/include
-)
-message(STATUS "basis_headers=${basis_headers}")
 set(chromium_base_headers
   ${CONAN_CHROMIUM_BASE_ROOT}/include
 )
@@ -513,13 +510,13 @@ if(NOT TARGET CONAN_PKG::flexlib)
   message(FATAL_ERROR "Use flexlib from conan")
 endif()
 set(flexlib CONAN_PKG::flexlib)
-if(LOCAL_BUILD)
+if(${PROJECT_NAME}_LOCAL_BUILD)
   set(flexlib flexlib)
-endif(LOCAL_BUILD)
+endif(${PROJECT_NAME}_LOCAL_BUILD)
 
 list(APPEND USED_3DPARTY_LIBS
   ${flexlib}
-  CONAN_PKG::basis
+  ${basis}
   CONAN_PKG::clang_folly_conan
   CONAN_PKG::boost
   CONAN_PKG::double-conversion
@@ -661,14 +658,14 @@ target_compile_definitions(${LIB_NAME} PUBLIC
 # install and export steps
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Exports.cmake)
 
-if(LOCAL_BUILD)
+if(${PROJECT_NAME}_LOCAL_BUILD)
   # for builds with conan workspace
   execute_process(
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${CMAKE_CURRENT_SOURCE_DIR}/conf/${LIB_NAME}.conf
             ${CMAKE_BINARY_DIR}/${LIB_NAME}.conf
   )
-endif(LOCAL_BUILD)
+endif(${PROJECT_NAME}_LOCAL_BUILD)
 
 # for builds without conan
 # allows to run tests without `cmake install` step
