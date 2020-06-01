@@ -1,4 +1,4 @@
-#include "example_datatypes.hpp"
+#include "pimpl_annotations.hpp"
 
 #include "FooImpl.hpp.generated.hpp"
 

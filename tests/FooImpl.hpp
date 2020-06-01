@@ -1,8 +1,9 @@
 #pragma once
 
-#include "example_datatypes.hpp"
+#include "pimpl_annotations.hpp"
 
 #include <string>
+#include <memory>
 
 namespace example_impl {
 

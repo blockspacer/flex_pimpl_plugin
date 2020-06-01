@@ -492,23 +492,29 @@ clang_utils::SourceTransformResult
       = reflectedClass->ASTRecordNonVirtualAlignment;
 
     replacer += "::pimpl::FastPimpl<";
+    replacer += "\n";
 
     // usually it is "FooImpl"
     DCHECK(!reflectForPimplSettings.implParameterQualType.empty());
     replacer += reflectForPimplSettings.implParameterQualType;
 
     // sizeof(Foo::FooImpl)
+    replacer += "\n";
     replacer += ", /*Size*/";
     replacer += std::to_string(typeSize);
 
     // alignof(Foo::FooImpl)
+    replacer += "\n";
     replacer += ", /*Alignment*/";
     replacer += std::to_string(fieldAlign);
 
+    replacer += "\n";
     replacer += ", ::pimpl::SizePolicy::AtLeast";
 
+    replacer += "\n";
     replacer += ", ::pimpl::AlignPolicy::AtLeast";
 
+    replacer += "\n";
     replacer += "> impl_;";
   }
 

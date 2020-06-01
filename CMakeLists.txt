@@ -391,8 +391,7 @@ set(pimpl_COMBO_TEMPLATE_HPP
 )
 
 set(flex_pimpl_plugin_generated_sources
-  ${CMAKE_CURRENT_BINARY_DIR}/Tooling.cc.generated.cc
-  ${CMAKE_CURRENT_BINARY_DIR}/CodeGenerator.cc.generated.cc
+  ${CMAKE_CURRENT_BINARY_DIR}/ForCodegen.cc.generated.cc
 )
 
 # Set GENERATED properties of your generated source file.
@@ -415,8 +414,7 @@ set(flex_pimpl_plugin_settings
 )
 
 set(flextool_input_files
-  ${flex_pimpl_plugin_src_DIR}/Tooling.cc
-  ${flex_pimpl_plugin_src_DIR}/CodeGenerator.cc
+  ${flex_pimpl_plugin_src_DIR}/ForCodegen.cc
 )
 
 # contains generated code that is under version control

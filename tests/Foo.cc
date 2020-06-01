@@ -1,4 +1,4 @@
-#include "example_datatypes.hpp"
+#include "pimpl_annotations.hpp"
 
 #include "Foo.hpp.generated.hpp"
 
@@ -30,7 +30,7 @@ Foo::~Foo() {
 // will replace itself with generated code like:
 // std::string foo() { return impl_; }
 template<
-  typename impl = FooImpl
+  typename impl = example_impl::FooImpl
   , typename interface = Foo
 >
 class _injectPimplMethodCalls()

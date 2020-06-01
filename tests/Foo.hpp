@@ -1,6 +1,6 @@
 #pragma once
 
-#include "example_datatypes.hpp"
+#include "pimpl_annotations.hpp"
 
 #include <basis/core/pimpl.hpp>
 
@@ -27,7 +27,7 @@ public:
   // Will replace itself with generated code like:
   // std::string foo();
   // int bar(int&& arg1, const int& arg2) const noexcept;
-  template<typename impl = FooImpl>
+  template<typename impl = example_impl::FooImpl>
   class
     _injectPimplMethodCalls(
       "without_method_body"
@@ -43,7 +43,7 @@ private:
   /// \note sizePadding adds extra bytes
   /// to aligned_storage used by fast PImpl
   template<
-    typename impl = FooImpl
+    typename impl = example_impl::FooImpl
   >
   class
     _injectPimplStorage(
