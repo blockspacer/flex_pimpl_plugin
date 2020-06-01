@@ -92,9 +92,9 @@ add_custom_command(
         --vmodule=*=200 --enable-logging=stderr --log-level=100
         --indir=${CMAKE_SOURCE_DIR}
         --outdir=${flextool_outdir}
-        --load_plugin=${flex_squarets_plugin}
+        --load_plugin=${flex_squarets_plugin_FILE}
         #--load_plugin=${flex_meta_plugin}
-        --load_plugin=${flex_reflect_plugin}
+        --load_plugin=${flex_reflect_plugin_FILE}
         --load_plugin=${${LIB_NAME}_file}
         --extra-arg=-I${cling_includes}
         --extra-arg=-I${clang_includes}
@@ -108,8 +108,8 @@ add_custom_command(
         # place into `flex_support_headers` includes that can be used by Cling
         --extra-arg=-I${chromium_base_headers}
         --extra-arg=-I${chromium_build_util_headers}
-        --extra-arg=-I${basis_headers}
-        --extra-arg=-I${flexlib_headers}
+        --extra-arg=-I${basis_HEADER_DIR}
+        --extra-arg=-I${flexlib_HEADER_DIR}
         --extra-arg=-DCLING_IS_ON=1
         # path to tests/example_datatypes.hpp
         --extra-arg=-I${CMAKE_CURRENT_SOURCE_DIR}
@@ -120,10 +120,10 @@ add_custom_command(
         ${flextool_extra_args}
         ${flextool_input_files}
         # cling_scripts must be ending argument
-        --cling_scripts=${flex_support_headers}
+        --cling_scripts=${flex_support_header_HEADER_FILE}
         --cling_scripts=${flex_pimpl_plugin_settings}
     DEPENDS ${LIB_NAME} ${ROOT_PROJECT_LIB} ${${LIB_NAME}_file}
-    COMMENT "running ${flextool}"
+    COMMENT "(flex_pimpl_plugin tests) running ${flextool}"
     VERBATIM # to support \t for example
 )
 

@@ -127,7 +127,7 @@ class flex_pimpl_plugin_conan_project(conan_build_helper.CMakePackage):
 
     # NOTE: no cmake_find_package due to custom FindXXX.cmake
     #generators = "cmake", "cmake_paths", "virtualenv"
-    generators = 'cmake_find_package', "cmake", "cmake_paths"
+    generators = "cmake", "cmake_paths"
 
     # Packages the license for the conanfile.py
     #exports = ["LICENSE.md"]
