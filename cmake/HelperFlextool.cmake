@@ -1,7 +1,7 @@
 message(STATUS "searching for flextool...")
 find_package(flextool MODULE REQUIRED)
 
-if(LOCAL_BUILD)
+if(flextool_LOCAL_BUILD)
   get_property(flextool_location TARGET flextool PROPERTY RUNTIME_OUTPUT_DIRECTORY)
   message (STATUS "flextool_location == ${flextool_location}")
   set(flextool "${flextool_location}/flextool")

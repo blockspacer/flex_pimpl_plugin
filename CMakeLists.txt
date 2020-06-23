@@ -396,6 +396,49 @@ endif()
 # you can link with library via --extra-arg=-l
 # example: --extra-arg=-l${flexlib_file}
 message(STATUS "flextool=${flextool}")
+set(FULL_CMD
+  # NOTE: can be run under gdb
+  #gdb
+  #  -ex "run"
+  #  -ex "set pagination off"
+  #  -ex "bt"
+  #  -ex "set confirm off"
+  #  -ex "quit"
+  #  --args
+  ${flextool}
+    --vmodule=*=200 --enable-logging=stderr --log-level=100
+    --indir=${CMAKE_CURRENT_SOURCE_DIR}
+    --outdir=${flextool_outdir}
+    --load_plugin=${flex_squarets_plugin_FILE}
+    --load_plugin=${flex_reflect_plugin_FILE}
+    --extra-arg=-I${cling_includes}
+    --extra-arg=-I${clang_includes}
+    --extra-arg=-I${corrade_includes}
+    --extra-arg=-I${entt_includes}
+    --extra-arg=-DCLING_IS_ON=1
+    # custom define for basis
+    --extra-arg=-DDISABLE_DOCTEST=1
+    --extra-arg=-DDOCTEST_CONFIG_DISABLE=1
+    --extra-arg=-I${CMAKE_CURRENT_SOURCE_DIR}/include
+    --extra-arg=-I${chromium_base_headers}
+    --extra-arg=-I${chromium_build_util_headers}
+    --extra-arg=-I${basis_HEADER_DIR}
+    --extra-arg=-I${flexlib_HEADER_DIR}
+    --extra-arg=-I${flextool_outdir}
+    # path to tests/example_datatypes.hpp
+    --extra-arg=-I${CMAKE_CURRENT_SOURCE_DIR}/tests
+    --extra-arg=-Wno-undefined-inline
+    --extra-arg=-Dpimpl_TEMPLATE_CPP="${pimpl_TEMPLATE_CPP}"
+    --extra-arg=-Dpimpl_TEMPLATE_HPP="${pimpl_TEMPLATE_HPP}"
+    --extra-arg=-Dpimpl_INSTANCE_TEMPLATE_CPP="${pimpl_INSTANCE_TEMPLATE_CPP}"
+    --extra-arg=-Dpimpl_COMBO_TEMPLATE_CPP="${pimpl_COMBO_TEMPLATE_CPP}"
+    --extra-arg=-Dpimpl_COMBO_TEMPLATE_HPP="${pimpl_COMBO_TEMPLATE_HPP}"
+    ${flextool_extra_args}
+    ${flextool_input_files}
+    # cling_scripts must be ending argument
+    --cling_scripts=${flex_support_header_HEADER_FILE}
+    --cling_scripts=${flex_pimpl_plugin_settings}
+)
 add_custom_command(
     OUTPUT
       ${flex_pimpl_plugin_generated_sources}
@@ -410,47 +453,12 @@ add_custom_command(
     #COMMAND
     #  ${CMAKE_COMMAND} -E echo " Creating ${flex_pimpl_plugin_generated_sources}."
     COMMAND
-      # NOTE: can be run under gdb
-      #gdb
-      #  -ex "run"
-      #  -ex "set pagination off"
-      #  -ex "bt"
-      #  -ex "set confirm off"
-      #  -ex "quit"
-      #  --args
-      ${flextool}
-        --vmodule=*=200 --enable-logging=stderr --log-level=100
-        --indir=${CMAKE_CURRENT_SOURCE_DIR}
-        --outdir=${flextool_outdir}
-        --load_plugin=${flex_squarets_plugin_FILE}
-        --load_plugin=${flex_reflect_plugin_FILE}
-        --extra-arg=-I${cling_includes}
-        --extra-arg=-I${clang_includes}
-        --extra-arg=-I${corrade_includes}
-        --extra-arg=-I${entt_includes}
-        --extra-arg=-DCLING_IS_ON=1
-        # custom define for basis
-        --extra-arg=-DDISABLE_DOCTEST=1
-        --extra-arg=-DDOCTEST_CONFIG_DISABLE=1
-        --extra-arg=-I${CMAKE_CURRENT_SOURCE_DIR}/include
-        --extra-arg=-I${chromium_base_headers}
-        --extra-arg=-I${chromium_build_util_headers}
-        --extra-arg=-I${basis_HEADER_DIR}
-        --extra-arg=-I${flexlib_HEADER_DIR}
-        --extra-arg=-I${flextool_outdir}
-        # path to tests/example_datatypes.hpp
-        --extra-arg=-I${CMAKE_CURRENT_SOURCE_DIR}/tests
-        --extra-arg=-Wno-undefined-inline
-        --extra-arg=-Dpimpl_TEMPLATE_CPP="${pimpl_TEMPLATE_CPP}"
-        --extra-arg=-Dpimpl_TEMPLATE_HPP="${pimpl_TEMPLATE_HPP}"
-        --extra-arg=-Dpimpl_INSTANCE_TEMPLATE_CPP="${pimpl_INSTANCE_TEMPLATE_CPP}"
-        --extra-arg=-Dpimpl_COMBO_TEMPLATE_CPP="${pimpl_COMBO_TEMPLATE_CPP}"
-        --extra-arg=-Dpimpl_COMBO_TEMPLATE_HPP="${pimpl_COMBO_TEMPLATE_HPP}"
-        ${flextool_extra_args}
-        ${flextool_input_files}
-        # cling_scripts must be ending argument
-        --cling_scripts=${flex_support_header_HEADER_FILE}
-        --cling_scripts=${flex_pimpl_plugin_settings}
+      "${CMAKE_COMMAND}"
+      -E
+      echo
+      "executing command: ${FULL_CMD}"
+    COMMAND
+      ${FULL_CMD}
     COMMENT "(flex_pimpl_plugin) running ${flextool}"
     VERBATIM # to support \t for example
 )

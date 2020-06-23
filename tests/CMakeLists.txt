@@ -67,6 +67,51 @@ get_property(${LIB_NAME}_location TARGET "${LIB_NAME}" PROPERTY LIBRARY_OUTPUT_D
 set(${LIB_NAME}_file "${${LIB_NAME}_location}/${LIB_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX}")
 message(STATUS "${LIB_NAME} file == ${${LIB_NAME}_file}")
 
+set(FULL_CMD
+  # NOTE: can be run under gdb
+  #gdb
+  #  -ex "run"
+  #  -ex "set pagination off"
+  #  -ex "bt"
+  #  -ex "set confirm off"
+  #  -ex "quit"
+  #  --args
+  ${flextool}
+    --vmodule=*=200 --enable-logging=stderr --log-level=100
+    --indir=${CMAKE_SOURCE_DIR}
+    --outdir=${flextool_outdir}
+    --load_plugin=${flex_squarets_plugin_FILE}
+    #--load_plugin=${flex_meta_plugin}
+    --load_plugin=${flex_reflect_plugin_FILE}
+    --load_plugin=${${LIB_NAME}_file}
+    --extra-arg=-I${cling_includes}
+    --extra-arg=-I${clang_includes}
+    --extra-arg=-I${corrade_includes}
+    --extra-arg=-I${entt_includes}
+    # custom define for basis
+    --extra-arg=-DDISABLE_DOCTEST=1
+    --extra-arg=-DDOCTEST_CONFIG_DISABLE=1
+    # NOTE: Cling does not support compile_commands.json
+    # so we must add headers used by `flex_support_headers` package
+    # place into `flex_support_headers` includes that can be used by Cling
+    --extra-arg=-I${chromium_base_headers}
+    --extra-arg=-I${chromium_build_util_headers}
+    --extra-arg=-I${basis_HEADER_DIR}
+    --extra-arg=-I${flexlib_HEADER_DIR}
+    --extra-arg=-DCLING_IS_ON=1
+    # path to tests/example_datatypes.hpp
+    --extra-arg=-I${CMAKE_CURRENT_SOURCE_DIR}
+    # path to flex_pimpl_plugin/include/flex_pimpl_plugin/pregenerated
+    --extra-arg=-I${pregenerated_DIR}
+    --extra-arg=-I${flextool_outdir}
+    --extra-arg=-Wno-undefined-inline
+    ${flextool_extra_args}
+    ${flextool_input_files}
+    # cling_scripts must be ending argument
+    --cling_scripts=${flex_support_header_HEADER_FILE}
+    --cling_scripts=${flex_pimpl_plugin_settings}
+)
+
 # you can link with library via --extra-arg=-l
 # example: --extra-arg=-l${flexlib_file}
 add_custom_command(
@@ -80,48 +125,12 @@ add_custom_command(
     #COMMAND
     #  ${CMAKE_COMMAND} -E remove ${generated_files}
     COMMAND
-      # NOTE: can be run under gdb
-      #gdb
-      #  -ex "run"
-      #  -ex "set pagination off"
-      #  -ex "bt"
-      #  -ex "set confirm off"
-      #  -ex "quit"
-      #  --args
-      ${flextool}
-        --vmodule=*=200 --enable-logging=stderr --log-level=100
-        --indir=${CMAKE_SOURCE_DIR}
-        --outdir=${flextool_outdir}
-        --load_plugin=${flex_squarets_plugin_FILE}
-        #--load_plugin=${flex_meta_plugin}
-        --load_plugin=${flex_reflect_plugin_FILE}
-        --load_plugin=${${LIB_NAME}_file}
-        --extra-arg=-I${cling_includes}
-        --extra-arg=-I${clang_includes}
-        --extra-arg=-I${corrade_includes}
-        --extra-arg=-I${entt_includes}
-        # custom define for basis
-        --extra-arg=-DDISABLE_DOCTEST=1
-        --extra-arg=-DDOCTEST_CONFIG_DISABLE=1
-        # NOTE: Cling does not support compile_commands.json
-        # so we must add headers used by `flex_support_headers` package
-        # place into `flex_support_headers` includes that can be used by Cling
-        --extra-arg=-I${chromium_base_headers}
-        --extra-arg=-I${chromium_build_util_headers}
-        --extra-arg=-I${basis_HEADER_DIR}
-        --extra-arg=-I${flexlib_HEADER_DIR}
-        --extra-arg=-DCLING_IS_ON=1
-        # path to tests/example_datatypes.hpp
-        --extra-arg=-I${CMAKE_CURRENT_SOURCE_DIR}
-        # path to flex_pimpl_plugin/include/flex_pimpl_plugin/pregenerated
-        --extra-arg=-I${pregenerated_DIR}
-        --extra-arg=-I${flextool_outdir}
-        --extra-arg=-Wno-undefined-inline
-        ${flextool_extra_args}
-        ${flextool_input_files}
-        # cling_scripts must be ending argument
-        --cling_scripts=${flex_support_header_HEADER_FILE}
-        --cling_scripts=${flex_pimpl_plugin_settings}
+      "${CMAKE_COMMAND}"
+      -E
+      echo
+      "executing command: ${FULL_CMD}"
+    COMMAND
+      ${FULL_CMD}
     DEPENDS ${LIB_NAME} ${ROOT_PROJECT_LIB} ${${LIB_NAME}_file}
     COMMENT "(flex_pimpl_plugin tests) running ${flextool}"
     VERBATIM # to support \t for example
