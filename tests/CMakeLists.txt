@@ -67,6 +67,16 @@ get_property(${LIB_NAME}_location TARGET "${LIB_NAME}" PROPERTY LIBRARY_OUTPUT_D
 set(${LIB_NAME}_file "${${LIB_NAME}_location}/${LIB_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX}")
 message(STATUS "${LIB_NAME} file == ${${LIB_NAME}_file}")
 
+# from cmake_helper_utils (conan package)
+get_all_compile_definitions(collected_defines
+  ${ROOT_PROJECT_LIB}
+)
+
+# from cmake_helper_utils (conan package)
+get_all_include_directories(collected_includes
+  ${ROOT_PROJECT_LIB}
+)
+
 set(FULL_CMD
   # NOTE: can be run under gdb
   #gdb
@@ -86,54 +96,66 @@ set(FULL_CMD
     --load_plugin=${${LIB_NAME}_file}
     --extra-arg=-I${cling_includes}
     --extra-arg=-I${clang_includes}
-    --extra-arg=-I${corrade_includes}
-    --extra-arg=-I${entt_includes}
+    #--extra-arg=-I${corrade_includes}
+    #--extra-arg=-I${entt_includes}
     # custom define for basis
     --extra-arg=-DDISABLE_DOCTEST=1
     --extra-arg=-DDOCTEST_CONFIG_DISABLE=1
     # NOTE: Cling does not support compile_commands.json
     # so we must add headers used by `flex_support_headers` package
     # place into `flex_support_headers` includes that can be used by Cling
-    --extra-arg=-I${chromium_base_headers}
-    --extra-arg=-I${chromium_build_util_headers}
-    --extra-arg=-I${basis_HEADER_DIR}
-    --extra-arg=-I${flexlib_HEADER_DIR}
+    #--extra-arg=-I${chromium_base_headers}
+    #--extra-arg=-I${chromium_build_util_headers}
+    #--extra-arg=-I${basis_HEADER_DIR}
+    #--extra-arg=-I${flexlib_HEADER_DIR}
     --extra-arg=-DCLING_IS_ON=1
     # path to tests/example_datatypes.hpp
     --extra-arg=-I${CMAKE_CURRENT_SOURCE_DIR}
     # path to flex_pimpl_plugin/include/flex_pimpl_plugin/pregenerated
     --extra-arg=-I${pregenerated_DIR}
     --extra-arg=-I${flextool_outdir}
+    # NOTE: generator expression, expands during build time
+    # if the ${ITEM} is non-empty, then append it
+    $<$<BOOL:${collected_defines}>:--extra-arg=-D$<JOIN:${collected_defines}, --extra-arg=-D>>
+    # NOTE: generator expression, expands during build time
+    # if the ${ITEM} is non-empty, then append it
+    $<$<BOOL:${collected_includes}>:--extra-arg=-I$<JOIN:${collected_includes}, --extra-arg=-I>>
     --extra-arg=-Wno-undefined-inline
     ${flextool_extra_args}
     ${flextool_input_files}
     # cling_scripts must be ending argument
-    --cling_scripts=${flex_support_header_HEADER_FILE}
+    --cling_scripts=${flex_support_headers_HEADER_FILE}
     --cling_scripts=${flex_pimpl_plugin_settings}
 )
 
 # you can link with library via --extra-arg=-l
 # example: --extra-arg=-l${flexlib_file}
 add_custom_command(
-    OUTPUT ${generated_files}
-    # code generator COMMAND will only be launched
-    # if some of DEPENDS files were changed.
-    DEPENDS
-      ${flextool_input_files}
-    #COMMAND
-    #  ${CMAKE_COMMAND} -E echo " Removing ${generated_files}."
-    #COMMAND
-    #  ${CMAKE_COMMAND} -E remove ${generated_files}
-    COMMAND
-      "${CMAKE_COMMAND}"
-      -E
-      echo
-      "executing command: ${FULL_CMD}"
-    COMMAND
-      ${FULL_CMD}
-    DEPENDS ${LIB_NAME} ${ROOT_PROJECT_LIB} ${${LIB_NAME}_file}
-    COMMENT "(flex_pimpl_plugin tests) running ${flextool}"
-    VERBATIM # to support \t for example
+  OUTPUT ${generated_files}
+  COMMAND
+    ${CMAKE_COMMAND} -E echo " Removing ${generated_files}."
+  COMMAND
+    ${CMAKE_COMMAND} -E remove ${generated_files}
+  COMMAND
+    "${CMAKE_COMMAND}"
+    -E
+    echo
+    "executing command: ${FULL_CMD}"
+  COMMAND
+    "${FULL_CMD}"
+  # code generator COMMAND will only be launched
+  # if some of DEPENDS files were changed.
+  DEPENDS
+    ${flextool_input_files}
+    ${LIB_NAME}
+    ${ROOT_PROJECT_LIB}
+    ${${LIB_NAME}_file}
+  # NOTE: uses COMMAND_EXPAND_LISTS
+  # to support generator expressions
+  # see https://cmake.org/cmake/help/v3.13/command/add_custom_target.html
+  COMMAND_EXPAND_LISTS
+  COMMENT "(flex_pimpl_plugin tests) running ${flextool}"
+  VERBATIM # to support \t for example
 )
 
 #findPackageCrossPlatform( Sanitizers ) # see https://github.com/arsenm/sanitizers-cmake
@@ -256,10 +278,6 @@ add_library( ${test_main_gtest} OBJECT
   #${${ROOT_PROJECT_NAME}_SRCS} # all source files  of root project without main.cpp
   #${THIRDPARTY_SOURCES}
   testsCommon.h # include in IDE
-)
-
-# generated files
-target_sources(${test_main_gtest} PRIVATE
   ${generated_files}
 )
 
@@ -347,9 +365,11 @@ foreach(target IN LISTS ALL_TESTS_LIST_VERBOSE)
   add_dependencies(${ROOT_PROJECT_NAME}_run_all_tests ${target})
 endforeach()
 
-add_custom_command( TARGET ${ROOT_PROJECT_NAME}_run_all_tests POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory
-                        ${CMAKE_CURRENT_SOURCE_DIR}/data ${CMAKE_BINARY_DIR}/bin/$<CONFIG>/tests/data )
+add_custom_command( TARGET ${ROOT_PROJECT_NAME}_run_all_tests
+  POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${CMAKE_CURRENT_SOURCE_DIR}/data
+      ${CMAKE_BINARY_DIR}/bin/$<CONFIG>/tests/data )
 
 option(ENABLE_CODE_COVERAGE "ENABLE CODE COVERAGE" OFF)
 if (ENABLE_CODE_COVERAGE)

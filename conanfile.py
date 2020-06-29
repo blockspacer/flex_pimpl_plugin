@@ -152,6 +152,7 @@ class flex_pimpl_plugin_conan_project(conan_build_helper.CMakePackage):
     def build_requirements(self):
         self.build_requires("cmake_platform_detection/master@conan/stable")
         self.build_requires("cmake_build_options/master@conan/stable")
+        self.build_requires("cmake_helper_utils/master@conan/stable")
 
     def requirements(self):
 
