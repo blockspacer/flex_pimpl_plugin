@@ -181,7 +181,7 @@ class flex_pimpl_plugin_conan_project(conan_build_helper.CMakePackage):
 
       self.requires("basis/master@conan/stable")
 
-      self.requires("corrade/2019.10@magnum/stable")
+      self.requires("corrade/2020.06@magnum/stable")
 
       self.requires("flextool/master@conan/stable")
 
