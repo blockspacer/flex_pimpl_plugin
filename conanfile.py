@@ -136,7 +136,7 @@ class flex_pimpl_plugin_conan_project(conan_build_helper.CMakePackage):
     # there is no need to define a `source` method. The source folder can be
     # defined like this
     exports_sources = ("LICENSE", "*.md", "include/*", "src/*",
-                       "cmake/*", "CMakeLists.txt", "tests/*", "benchmarks/*",
+                       "cmake/*", "examples/*", "CMakeLists.txt", "tests/*", "benchmarks/*",
                        "scripts/*", "tools/*", "codegen/*", "assets/*", "conf/*",
                        "docs/*", "licenses/*", "patches/*", "resources/*",
                        "submodules/*", "thirdparty/*", "third-party/*",
