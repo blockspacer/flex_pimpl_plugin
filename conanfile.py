@@ -158,7 +158,7 @@ class flex_pimpl_plugin_conan_project(conan_build_helper.CMakePackage):
 
       if self._is_tests_enabled():
           self.requires("catch2/[>=2.1.0]@bincrafters/stable")
-          self.requires("gtest/[>=1.8.0]@bincrafters/stable")
+          self.requires("conan_gtest/release-1.10.0@conan/stable")
           self.requires("FakeIt/[>=2.0.4]@gasuketsu/stable")
 
       if not self.options.use_system_boost:

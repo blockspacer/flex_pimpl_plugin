@@ -34,7 +34,7 @@ message( "CONAN_PKG::FakeIt=${FakeIt_IMPORTED_LOCATION}" )
 list(APPEND TESTS_3DPARTY_LIBS
     #CONAN_PKG::cling_conan
     #FakeIt
-    CONAN_PKG::gtest
+    CONAN_PKG::conan_gtest
     CONAN_PKG::FakeIt
     CONAN_PKG::catch2
     ${ROOT_PROJECT_NAME}-catch2-root # so FakeIt will be able to see 'catch.hpp'
@@ -207,7 +207,7 @@ macro(set_test_compile_options target)
     CXX_EXTENSIONS OFF
     CMAKE_CXX_STANDARD_REQUIRED ON
     CMAKE_CXX_FLAGS "-frtti /std:c++latest"
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/tests )
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
 endmacro()
 
 macro(tests_add_executable target source_list TEST_ARGS TEST_LIB)
@@ -322,7 +322,7 @@ target_include_directories( ${test_main_gtest} SYSTEM PUBLIC
   # path to /generated folder
   ${flextool_outdir}
   ${GENERATED_FOLDER_FOR_IDE}
-  #${CMAKE_BINARY_DIR}
+  #${CMAKE_CURRENT_BINARY_DIR}
   #${CMAKE_CURRENT_BINARY_DIR}
 )
 
@@ -369,7 +369,7 @@ add_custom_command( TARGET ${ROOT_PROJECT_NAME}_run_all_tests
   POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
       ${CMAKE_CURRENT_SOURCE_DIR}/data
-      ${CMAKE_BINARY_DIR}/bin/$<CONFIG>/tests/data )
+      ${CMAKE_CURRENT_BINARY_DIR} )
 
 option(ENABLE_CODE_COVERAGE "ENABLE CODE COVERAGE" OFF)
 if (ENABLE_CODE_COVERAGE)
