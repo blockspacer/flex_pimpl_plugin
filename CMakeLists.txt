@@ -24,11 +24,14 @@ set(GENERATED_FOLDER_FOR_IDE
   CACHE
   STRING "GENERATED_FOLDER_FOR_IDE" )
 
-# Hack to depend NOT on CONAN_PKG::libname, but on libname directly
-# See for details
-# https://docs.conan.io/en/latest/developing_packages/workspaces.html
-set(${PROJECT_NAME}_LOCAL_BUILD FALSE CACHE BOOL "${PROJECT_NAME}_LOCAL_BUILD")
-message(STATUS "${PROJECT_NAME}_LOCAL_BUILD=${${PROJECT_NAME}_LOCAL_BUILD}")
+# used by https://docs.conan.io/en/latest/developing_packages/workspaces.html
+get_filename_component(LOCAL_BUILD_ABSOLUTE_ROOT_PATH
+  "${PACKAGE_flex_pimpl_plugin_SRC}"
+  ABSOLUTE)
+if(EXISTS "${LOCAL_BUILD_ABSOLUTE_ROOT_PATH}")
+  # path to Find*.cmake file
+  list(PREPEND CMAKE_MODULE_PATH "${LOCAL_BUILD_ABSOLUTE_ROOT_PATH}/cmake")
+endif()
 
 set(${PROJECT_NAME}_BUILD_SHARED_LIBS
   TRUE CACHE BOOL
@@ -202,11 +205,6 @@ if(NOT TARGET CONAN_PKG::chromium_base)
   message(FATAL_ERROR "Use chromium_base from conan")
 endif()
 
-if(NOT TARGET CONAN_PKG::clang_folly_conan)
-  message(FATAL_ERROR "Use clang_folly_conan from conan")
-endif()
-
-
 if(NOT TARGET CONAN_PKG::chromium_build_util)
   message(FATAL_ERROR "Use chromium_build_util from conan")
 endif()
@@ -220,10 +218,8 @@ else()
 endif()
 
 find_package(chromium_base REQUIRED)
-if(TARGET chromium_base::chromium_base-static)
-  set(base_LIB chromium_base::chromium_base-static)
-else()
-  message(FATAL_ERROR "not supported: using system provided chromium_base library")
+if(NOT TARGET ${base_LIB})
+  message(FATAL_ERROR "not supported ${base_LIB}: using system provided chromium_base library")
 endif()
 
 # see https://doc.magnum.graphics/corrade/corrade-cmake.html#corrade-cmake-subproject
@@ -426,28 +422,13 @@ list(APPEND USED_3DPARTY_LIBS
 )
 
 list(APPEND USED_3DPARTY_LIBS
-  ${flexlib_LIB}
   ${basis_LIB}
-  CONAN_PKG::clang_folly_conan
+  ${flexlib_LIB}
   CONAN_PKG::boost
-  CONAN_PKG::double-conversion
-  CONAN_PKG::glog
-  CONAN_PKG::lz4
-  CONAN_PKG::lzma
-  CONAN_PKG::zstd
-  CONAN_PKG::snappy
-  CONAN_PKG::libsodium
-  CONAN_PKG::libdwarf
-  CONAN_PKG::bzip2
-  CONAN_PKG::gflags
-  CONAN_PKG::libunwind
-  CONAN_PKG::libelf
-  CONAN_PKG::xz_utils
+  CONAN_PKG::openssl
   CONAN_PKG::corrade
   Corrade::PluginManager
   ${USED_BOOST_LIBS}
-  #boost_outcome
-  #microsoft_gsl
 )
 
 set_property(TARGET ${LIB_NAME} PROPERTY CXX_STANDARD 20)
@@ -464,20 +445,10 @@ set(USED_SYSTEM_LIBS
     Threads::Threads # pthread, https://cmake.org/cmake/help/v3.13/module/FindThreads.html
     ${X11_LIBRARIES} # https://cmake.org/cmake/help/v3.13/module/FindX11.html
     ${CMAKE_DL_LIBS} # https://cmake.org/cmake/help/v3.13/variable/CMAKE_DL_LIBS.html
-    EXPAT::EXPAT # https://cmake.org/cmake/help/v3.13/module/FindEXPAT.html
-    ZLIB::ZLIB # https://cmake.org/cmake/help/v3.13/module/FindZLIB.html
-               # Custom libs
     stdc++fs # C++17 std::filesystem
-    # @note: Order matters https://stackoverflow.com/a/10269201/10904212
-    ${LIBIBERTY_LIBRARY} # used by folly
-    ${DOUBLE_CONVERSION_LIBRARY} # used by folly
-    ${LIBEVENT_LIB} # used by folly
-    ${LZ4_LIBRARY} # used by folly
-    ${LIBUNWIND_LIBRARIES} # used by folly
-    ${LIBLZMA_LIBRARIES} # used by folly
     CACHE INTERNAL "USED_SYSTEM_LIBS")
 
-target_link_libraries(${LIB_NAME} PUBLIC#PRIVATE
+target_link_libraries(${LIB_NAME} PUBLIC
   ${USED_3DPARTY_LIBS}
   ${USED_SYSTEM_LIBS}
 )
@@ -608,7 +579,11 @@ set(FULL_CMD
     --extra-arg=-DDISABLE_DOCTEST=1
     --extra-arg=-DDOCTEST_CONFIG_DISABLE=1
     #--extra-arg=-I${CMAKE_CURRENT_SOURCE_DIR}/include
-    #--extra-arg=-I${chromium_base_headers}
+    --extra-arg=-I${chromium_base_headers}
+    # TODO: (hack) we want `base/logging.h` from `chromium_base`, not from `chromium_tcmalloc`
+    # so we included `chromium_base` manually BEFORE `collected_includes`
+    # Bug reproduced only in conan workspace mode (seems `collected_includes` does not respect PRIVATE or PUBLIC).
+    --extra-arg=-I${chromium_base_HEADER_DIR}
     #--extra-arg=-I${chromium_build_util_headers}
     #--extra-arg=-I${basis_HEADER_DIR}
     #--extra-arg=-I${flexlib_HEADER_DIR}
@@ -664,23 +639,25 @@ add_custom_command(
 # install and export steps
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Exports.cmake)
 
-if(${PROJECT_NAME}_LOCAL_BUILD)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/conf/${LIB_NAME}.conf")
   # for builds with conan workspace
   execute_process(
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${CMAKE_CURRENT_SOURCE_DIR}/conf/${LIB_NAME}.conf
             ${CMAKE_BINARY_DIR}/${LIB_NAME}.conf
   )
-endif(${PROJECT_NAME}_LOCAL_BUILD)
+endif()
 
-# for builds without conan
-# allows to run tests without `cmake install` step
-# copies files required to start test executable
-execute_process(
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${CMAKE_CURRENT_SOURCE_DIR}/conf/${LIB_NAME}.conf
-          ${CMAKE_CURRENT_BINARY_DIR}/${LIB_NAME}.conf
-)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/conf/${LIB_NAME}.conf")
+  # for builds without conan
+  # allows to run tests without `cmake install` step
+  # copies files required to start test executable
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_CURRENT_SOURCE_DIR}/conf/${LIB_NAME}.conf
+            ${CMAKE_CURRENT_BINARY_DIR}/${LIB_NAME}.conf
+  )
+endif()
 
 if(ENABLE_TESTS)
   add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/tests )

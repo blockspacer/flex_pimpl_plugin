@@ -1,7 +1,8 @@
 message(STATUS "searching for flextool...")
 find_package(flextool MODULE REQUIRED)
 
-if(flextool_LOCAL_BUILD)
+# used by https://docs.conan.io/en/latest/developing_packages/workspaces.html
+if(TARGET flextool OR TARGET flextool::exe)
   get_property(flextool_location TARGET flextool PROPERTY RUNTIME_OUTPUT_DIRECTORY)
   message (STATUS "flextool_location == ${flextool_location}")
   set(flextool "${flextool_location}/flextool")

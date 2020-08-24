@@ -31,7 +31,7 @@ i.e. `tests/Foo.hpp` and `tests/FooImpl.hpp`
 
 ```cpp
 // will replace itself with generated code like:
-// std::string foo() { return impl_; }
+// std::string foo() { return impl_->foo(); }
 template<
   typename impl = FooImpl
   , typename interface = Foo

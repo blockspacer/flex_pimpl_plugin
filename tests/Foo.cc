@@ -28,7 +28,7 @@ Foo::~Foo() {
 }
 
 // will replace itself with generated code like:
-// std::string foo() { return impl_; }
+// std::string foo() { return impl_->foo(); }
 template<
   typename impl = example_impl::FooImpl
   , typename interface = Foo

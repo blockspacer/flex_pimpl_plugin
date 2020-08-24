@@ -36,7 +36,6 @@ class flex_pimpl_plugin_conan_project(conan_build_helper.CMakePackage):
 
     options = {
         "shared": [True, False],
-        "use_system_boost": [True, False],
         "enable_clang_from_conan": [True, False],
         "enable_sanitizers": [True, False]
     }
@@ -45,24 +44,39 @@ class flex_pimpl_plugin_conan_project(conan_build_helper.CMakePackage):
         #"*:shared=False",
         "shared=True",
         "enable_clang_from_conan=False",
-        "use_system_boost=False",
         "enable_sanitizers=False",
         # boost
-        "boost:without_atomic=True",
-        "boost:without_chrono=True",
-        "boost:without_container=True",
-        "boost:without_context=True",
-        "boost:without_coroutine=True",
-        "boost:without_graph=True",
-        "boost:without_graph_parallel=True",
-        "boost:without_log=True",
-        "boost:without_math=True",
-        "boost:without_mpi=True",
-        "boost:without_serialization=True",
+        "boost:no_rtti=False",
+        "boost:no_exceptions=False",
+        "boost:without_python=True",
         "boost:without_test=True",
-        "boost:without_timer=True",
-        "boost:without_type_erasure=True",
-        "boost:without_wave=True",
+        "boost:without_coroutine=False",
+        "boost:without_stacktrace=False",
+        "boost:without_math=False",
+        "boost:without_wave=False",
+        "boost:without_contract=False",
+        "boost:without_locale=False",
+        "boost:without_random=False",
+        "boost:without_regex=False",
+        "boost:without_mpi=False",
+        "boost:without_timer=False",
+        "boost:without_thread=False",
+        "boost:without_chrono=False",
+        "boost:without_atomic=False",
+        "boost:without_system=False",
+        "boost:without_program_options=False",
+        "boost:without_serialization=False",
+        "boost:without_log=False",
+        "boost:without_type_erasure=False",
+        "boost:without_graph=False",
+        "boost:without_graph_parallel=False",
+        "boost:without_iostreams=False",
+        "boost:without_context=False",
+        "boost:without_fiber=False",
+        "boost:without_filesystem=False",
+        "boost:without_date_time=False",
+        "boost:without_exception=False",
+        "boost:without_container=False",
         # llvm
         "llvm:shared=False",
         "compiler-rt:shared=False",
@@ -161,8 +175,7 @@ class flex_pimpl_plugin_conan_project(conan_build_helper.CMakePackage):
           self.requires("conan_gtest/release-1.10.0@conan/stable")
           self.requires("FakeIt/[>=2.0.4]@gasuketsu/stable")
 
-      if not self.options.use_system_boost:
-          self.requires("boost/1.71.0@dev/stable")
+      self.requires("boost/1.71.0@dev/stable")
 
       self.requires("chromium_build_util/master@conan/stable")
 
@@ -181,7 +194,7 @@ class flex_pimpl_plugin_conan_project(conan_build_helper.CMakePackage):
 
       self.requires("basis/master@conan/stable")
 
-      self.requires("corrade/2020.06@magnum/stable")
+      self.requires("corrade/v2020.06@conan/stable")
 
       self.requires("flextool/master@conan/stable")
 
