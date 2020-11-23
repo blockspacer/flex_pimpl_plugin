@@ -9,7 +9,7 @@
 #define CATCH_CONFIG_RUNNER
 #endif
 
-#include "basis/log_util.hpp"
+#include "basis/log/log_util.hpp"
 
 #include <base/logging.h>
 #include <base/i18n/icu_util.h>
