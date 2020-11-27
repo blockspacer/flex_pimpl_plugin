@@ -474,7 +474,7 @@ clang_utils::SourceTransformResult
 
   /**
    * generates code similar to:
-   *  pimpl::FastPimpl<FooImpl, Size, Alignment> impl_;
+   *  basis::FastPimpl<FooImpl, Size, Alignment> impl_;
    **/
   {
     DVLOG(9)
@@ -491,7 +491,7 @@ clang_utils::SourceTransformResult
     unsigned fieldAlign
       = reflectedClass->ASTRecordNonVirtualAlignment;
 
-    replacer += "::pimpl::FastPimpl<";
+    replacer += "::basis::FastPimpl<";
     replacer += "\n";
 
     // usually it is "FooImpl"
@@ -509,10 +509,10 @@ clang_utils::SourceTransformResult
     replacer += std::to_string(fieldAlign);
 
     replacer += "\n";
-    replacer += ", ::pimpl::SizePolicy::AtLeast";
+    replacer += ", ::basis::pimpl::SizePolicy::AtLeast";
 
     replacer += "\n";
-    replacer += ", ::pimpl::AlignPolicy::AtLeast";
+    replacer += ", ::basis::pimpl::AlignPolicy::AtLeast";
 
     replacer += "\n";
     replacer += "> impl_;";

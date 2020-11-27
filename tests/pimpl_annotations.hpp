@@ -2,7 +2,7 @@
 
 // Storage used by PImpl.
 // Will replace itself with generated code like:
-// pimpl::FastPimpl<FooImpl, /*Size*/ 64, /*Alignment*/ 12> impl_;
+// ::basis::pimpl::FastPimpl<FooImpl, /*Size*/ 64, /*Alignment*/ 12> impl_;
 /// \note sizePadding adds extra bytes
 /// to aligned_storage used by fast PImpl
 #define _injectPimplStorage(settings) \
