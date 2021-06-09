@@ -96,19 +96,21 @@ Code generator processes `flextool_input_files` from `tests/CMakeLists.txt`
 export CXX=clang++-10
 export CC=clang-10
 
+export VERBOSE=1
+export CONAN_REVISIONS_ENABLED=1
+export CONAN_VERBOSE_TRACEBACK=1
+export CONAN_PRINT_RUN_COMMANDS=1
+export CONAN_LOGGING_LEVEL=10
+export GIT_SSL_NO_VERIFY=true
+
 # NOTE: change `build_type=Debug` to `build_type=Release` in production
 # NOTE: use --build=missing if you got error `ERROR: Missing prebuilt package`
-CONAN_REVISIONS_ENABLED=1 \
-CONAN_VERBOSE_TRACEBACK=1 \
-CONAN_PRINT_RUN_COMMANDS=1 \
-CONAN_LOGGING_LEVEL=10 \
-GIT_SSL_NO_VERIFY=true \
-    cmake -E time \
-      conan create . conan/stable \
-      -s build_type=Debug -s cling_conan:build_type=Release \
-      --profile clang \
-          -o flex_pimpl_plugin:enable_clang_from_conan=False \
-          -e flex_pimpl_plugin:enable_tests=True
+cmake -E time \
+  conan create . conan/stable \
+  -s build_type=Debug -s cling_conan:build_type=Release \
+  --profile clang \
+      -o flex_pimpl_plugin:enable_clang_from_conan=False \
+      -e flex_pimpl_plugin:enable_tests=True
 
 # clean build cache
 conan remove "*" --build --force
@@ -134,18 +136,13 @@ cmake -E make_directory build
 build_type=Debug
 
 # install conan requirements
-CONAN_REVISIONS_ENABLED=1 \
-    CONAN_VERBOSE_TRACEBACK=1 \
-    CONAN_PRINT_RUN_COMMANDS=1 \
-    CONAN_LOGGING_LEVEL=10 \
-    GIT_SSL_NO_VERIFY=true \
-        cmake -E chdir build cmake -E time \
-            conan install \
-            -s build_type=${build_type} -s cling_conan:build_type=Release \
-            --build=missing \
-            --profile clang \
-                -e enable_tests=True \
-                ..
+cmake -E chdir build cmake -E time \
+  conan install \
+  -s build_type=${build_type} -s cling_conan:build_type=Release \
+  --build=missing \
+  --profile clang \
+      -e enable_tests=True \
+      ..
 
 # optional: remove generated files (change paths to yours)
 rm build/*generated*
@@ -182,33 +179,34 @@ See for details [https://docs.conan.io/en/latest/developing_packages/editable_pa
 Build locally:
 
 ```bash
-CONAN_REVISIONS_ENABLED=1 \
-CONAN_VERBOSE_TRACEBACK=1 \
-CONAN_PRINT_RUN_COMMANDS=1 \
-CONAN_LOGGING_LEVEL=10 \
-GIT_SSL_NO_VERIFY=true \
-  cmake -E time \
-    conan install . \
-    --install-folder local_build \
-    -s build_type=Debug -s cling_conan:build_type=Release \
-    --profile clang \
-      -o flex_pimpl_plugin:enable_clang_from_conan=False \
-      -e flex_pimpl_plugin:enable_tests=True
+export VERBOSE=1
+export CONAN_REVISIONS_ENABLED=1
+export CONAN_VERBOSE_TRACEBACK=1
+export CONAN_PRINT_RUN_COMMANDS=1
+export CONAN_LOGGING_LEVEL=10
+export GIT_SSL_NO_VERIFY=true
 
-CONAN_REVISIONS_ENABLED=1 \
-CONAN_VERBOSE_TRACEBACK=1 \
-CONAN_PRINT_RUN_COMMANDS=1 \
-CONAN_LOGGING_LEVEL=10 \
-GIT_SSL_NO_VERIFY=true \
-  cmake -E time \
-    conan source . --source-folder local_build
+cmake -E time \
+  conan install . \
+  --install-folder local_build \
+  -s build_type=Debug -s cling_conan:build_type=Release \
+  --profile clang \
+    -o flex_pimpl_plugin:enable_clang_from_conan=False \
+    -e flex_pimpl_plugin:enable_tests=True
+
+cmake -E time \
+  conan source . \
+  --source-folder local_build \
+  --install-folder local_build
 
 conan build . \
   --build-folder local_build
 
 conan package . \
   --build-folder local_build \
-  --package-folder local_build/package_dir
+  --package-folder local_build/package_dir \
+  --source-folder local_build \
+  --install-folder local_build
 ```
 
 Set package to editable mode:
@@ -228,7 +226,9 @@ conan build . \
 
 conan package . \
   --build-folder local_build \
-  --package-folder local_build/package_dir
+  --package-folder local_build/package_dir \
+  --source-folder local_build \
+  --install-folder local_build
 ```
 
 Build your test project

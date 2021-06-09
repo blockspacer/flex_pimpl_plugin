@@ -58,15 +58,17 @@ class TestPackageConan(ConanFile):
             cling_includes = os.path.join(cling_includes, "include")
             self.output.info('cling_includes = %s' % (cling_includes))
             #
-            # clang_includes must point to stddef.h from lib/clang/5.0.0/include
+            # clang_includes must point to stddef.h from lib/clang/9.0.1/include
             clang_includes = cling_conan_ROOT
             clang_includes = os.path.join(clang_includes, "lib")
             clang_includes = os.path.join(clang_includes, "clang")
-            clang_includes = os.path.join(clang_includes, "5.0.0")
+            clang_includes = os.path.join(clang_includes, "9.0.1")
             clang_includes = os.path.join(clang_includes, "include")
+            if not os.path.isdir(clang_includes):
+              raise Exception('ERROR: Unable to find directory %s' % (clang_includes))
             self.output.info('clang_includes = %s' % (clang_includes))
             #
-            flextool_cmd = "flextool" \
+            flextool_cmd = os.environ['flextool_BIN'] \
               " --outdir ." \
               " --indir ." \
               " --vmodule=*=100 --enable-logging=stderr --log-level=100" \
